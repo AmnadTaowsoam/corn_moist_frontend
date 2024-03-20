@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../APIs_Interface-Service/API_interface_Nodejs"
+		},
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../corn_api"
+		},
+		{
+			"path": "../../../../corn_client"
+		}
+	],
+	"settings": {}
+}
