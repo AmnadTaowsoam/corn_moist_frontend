@@ -1,16 +1,13 @@
-import React, { useState } from "react";
-import btglogoB from "../assets/btglogoB.png";
-import { Link, useNavigate } from "react-router-dom";
+"use client";
 
-// สร้าง InputField component สำหรับรับ input จากผู้ใช้
-const InputField = ({
-  id,
-  type = "text",
-  placeholder,
-  label,
-  value,
-  onChange,
-}) => (
+import { useState } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import btglogoB from "../../../public/btglogoB.png";
+
+// InputField component
+const InputField = ({ id, type = "text", placeholder, label, value, onChange }) => (
   <div className="mb-6">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">
       {label}
@@ -28,8 +25,8 @@ const InputField = ({
   </div>
 );
 
-const Login = () => {
-  const navigate = useNavigate();
+const ClientComponent = () => {
+  
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -42,12 +39,12 @@ const Login = () => {
     setCredentials({ ...credentials, [name]: value });
   };
 
+  const apiUrl = process.env.NEXT_PUBLIC_APIGATEWAY_URL;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
-    const apiUrl = import.meta.env.VITE_REACT_APP_APIGATEWAY_URL;
 
     try {
       const response = await fetch(`${apiUrl}/users/login`, {
@@ -65,37 +62,26 @@ const Login = () => {
       }
 
       const data = await response.json();
-      if (response.ok) {
-        // ประมวลผลข้อมูลที่ได้รับ
-      } else {
-        throw new Error(data.message || "Something went wrong");
-      }
-
-      // เก็บ accessToken, refreshToken, และ roles ลงใน sessionStorage
       sessionStorage.setItem("accessToken", data.accessToken);
       sessionStorage.setItem("refreshToken", data.refreshToken);
       sessionStorage.setItem("roles", JSON.stringify(data.roles));
       sessionStorage.setItem("username", credentials.username);
-
       setIsLoading(false);
-      navigate("/");
+      router.push("/"); // Navigate to the homepage
     } catch (error) {
       setIsLoading(false);
-      console.error("Login - Error:", error.message);
       setError(error.message);
     }
   };
 
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <img className="mx-auto h-40 w-40" src={btglogoB} alt="betagro" />
+      <div className="flex flex-col items-center justify-center">
+        <Image src={btglogoB} alt="betagro" width={160} height={160} />
         <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
           Sign in
         </h2>
-        {error && (
-          <div className="mt-2 text-center text-sm text-red-600">{error}</div>
-        )}
+        {error && <div className="mt-2 text-center text-sm text-red-600">{error}</div>}
       </div>
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -114,7 +100,6 @@ const Login = () => {
             value={credentials.password}
             onChange={handleChange}
           />
-
           <button
             type="submit"
             className="w-full btn btn-primary text-xl mt-6"
@@ -125,8 +110,8 @@ const Login = () => {
           <p className="text-center mt-6">
             Not a member?{" "}
             <Link
-              to="/register"
-              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+              href="/register"
+              className="block p-2 text-base font-bold text-blue-500"
             >
               Register
             </Link>
@@ -137,4 +122,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ClientComponent;

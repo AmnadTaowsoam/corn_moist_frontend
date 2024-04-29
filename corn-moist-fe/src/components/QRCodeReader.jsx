@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Information from "./Information";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const QRCodeReader = ({ setInterfaceData, clearAll }) => {
   const [inputText, setInputText] = useState("");
@@ -73,33 +74,33 @@ const QRCodeReader = ({ setInterfaceData, clearAll }) => {
 
   return (
     <>
-      <div className="container mx-auto">
+      <div className="">
         <form>
-          <div className="grid gap-1">
-            <div className="flex items-center">
+          <div className=" grid grid-cols-3 gap-4 ml-4 mr-4">
+            {/* QR code reader */}
+            <div className="flex items-center mt-5">
               <input
                 type="text"
-                className="block w-full p-2 text-xs border border-gray-300 rounded-lg"
-                placeholder="  ... >>>> Scan QRCode"
+                className="w-full p-1 border border-gray-300 rounded-lg mr-2"
+                placeholder="  >>>> Scan QRCode"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
-              <button
-                className="btn btn-outline btn-primary rounded-full text-sm ml-2 px-2 py-1"
-                onClick={handleAddClick}
-              >
-                Split Text
-              </button>
+              <p>
+                <span 
+                  onClick={handleAddClick}
+                  style={{ color: "blue", cursor: "pointer" }}
+                  >
+                    <i className="fa-solid fa-qrcode"></i>
+                  </span>
+              </p>
             </div>
+            {/* Information */}
+            <div className="col-span-2">
+                <Information formData={formData} onFormDataChange={handleFormDataChange} clearAll={clearAll}/>
+              </div>
           </div>
         </form>
-        <div>
-          <Information
-            formData={formData}
-            onFormDataChange={handleFormDataChange}
-            clearAll={clearAll}
-          />
-        </div>
       </div>
     </>
   );

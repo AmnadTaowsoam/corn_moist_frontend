@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import btglogoB from "../assets/btglogoB.png";
+"use client"
+import { useState } from "react";
+import { useRouter } from "next/router";
+import Image from 'next/image';
+import btglogoB from "../../../public/btglogoB.png";  // Adjust the path if necessary
 
 const InputField = ({
   id,
@@ -36,20 +38,19 @@ const Register = () => {
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const apiUrl = import.meta.env.VITE_REACT_APP_APIGATEWAY_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_APIGATEWAY_URL;  // Using NEXT_PUBLIC_ prefix for client-side access
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Combining user registration data and machine configuration data
     const combinedData = {
       username: formData.username,
       password: formData.password,
@@ -58,7 +59,6 @@ const Register = () => {
     };
 
     try {
-      // Sending a single request to the new endpoint
       const response = await fetch(
         `${apiUrl}/users/register`,
         {
@@ -75,7 +75,6 @@ const Register = () => {
       const result = await response.json();
       console.log(result); // Logging the response for debugging purposes
 
-      // Assuming the request was successful
       setIsLoading(false);
       setFormData({
         username: "",
@@ -85,7 +84,7 @@ const Register = () => {
       });
       setError("");
       alert("Registration successful! Please login.");
-      navigate("/sign-in"); // Navigate to sign-in page
+      router.push("/login"); // Using useRouter for navigation
     } catch (error) {
       setIsLoading(false);
       setError(error.message);
@@ -95,7 +94,7 @@ const Register = () => {
   return (
     <div className="flex min-h-full flex-col justify-center px-4 lg:px-6">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <img className="mx-auto h-40 w-40" src={btglogoB} alt="Logo" />
+        <Image src={btglogoB} alt="Logo" width={160} height={160} className="mx-auto"/>
         <h2 className="m-2 text-center text-3xl font-extrabold text-gray-900">
           Create your account
         </h2>
@@ -104,47 +103,37 @@ const Register = () => {
         )}
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <form className="" onSubmit={handleSubmit}>
-          <div>
-            <InputField
-              id="username"
-              placeholder="Your Username"
-              label="User Name"
-              value={formData.username}
-              onChange={handleChange}
-            />
-            <div>
-              <InputField
-                id="password"
-                type="password"
-                placeholder="Create a password"
-                label="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col">
-            <InputField
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              label="Email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <InputField
-              id="roles"
-              placeholder="user"
-              label="Roles"
-              value={formData.roles}
-              onChange={handleChange}
-            />
-          </div>
-
+        <form onSubmit={handleSubmit}>
+          <InputField
+            id="username"
+            placeholder="Your Username"
+            label="User Name"
+            value={formData.username}
+            onChange={handleChange}
+          />
+          <InputField
+            id="password"
+            type="password"
+            placeholder="Create a password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+          <InputField
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+          <InputField
+            id="roles"
+            placeholder="user"
+            label="Roles"
+            value={formData.roles}
+            onChange={handleChange}
+          />
           <button
             type="submit"
             className="w-full btn btn-primary text-xl"
@@ -159,3 +148,4 @@ const Register = () => {
 };
 
 export default Register;
+

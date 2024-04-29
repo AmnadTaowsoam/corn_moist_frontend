@@ -11,9 +11,9 @@ const Information = ({ formData, onFormDataChange }) => {
 
   return (
     <>
-    <div className="ml-2 mr-2 mb-2">
+    <div className="ml-2">
         <form className="">
-        <div className="grid grid-cols-8 gap-1 gap-y-0.5 ">
+        <div className="grid grid-cols-8 gap-2">
             {/* Input for Queue */}
             <div className="">
             <label

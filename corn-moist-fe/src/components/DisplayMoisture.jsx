@@ -44,7 +44,7 @@ const DisplayMoisture = () => {
         setIsLoading(false);
     };
 
-    return () => ws.readyState === WebSocket.OPEN && ws.close(1000, "Component unmounting");
+    return () => ws.readyState === WebSocket.OPEN && ws.close(100000, "Component unmounting");
   }, [baseURL]);
 
   if (isLoading) return <div>Loading prediction data...</div>;

@@ -12,6 +12,7 @@ const Register = lazy(() => import('./pages/Register'));
 const Tutorial = lazy (() => import('./pages/Tutorial'));
 const Support = lazy(() => import('./pages/Support'));
 const Logout = lazy(() => import('./pages/Logout'));
+const Users = lazy(() => import('./pages/Users'));
 
 // New component to handle redirection
 const AuthRedirect = () => {
@@ -35,10 +36,11 @@ function App() {
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               <Route path="/sign-in" element={<Login />} />
-              <Route path="/register" element={<ProtectedRouteSUser><Register /></ProtectedRouteSUser>} />
+              <Route path="/register" element={<Register />} />
               <Route path="/" element={<ProtectedRouteUser><Home /></ProtectedRouteUser>} />
               <Route path="/tutorial" element={<Tutorial />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/users" element={<Users />} />
               <Route path="/logout" element={<Logout />} />
             </Routes>
           </Suspense>

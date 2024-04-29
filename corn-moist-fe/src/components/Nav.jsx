@@ -36,12 +36,13 @@ function Nav() {
           <li><Link to="/" className="font-bold">Home</Link></li>
           <li><Link to="/tutorial" className="font-bold">Tutorial</Link></li>
           <li><Link to="/support" className="font-bold">Support</Link></li>
+          <li><a href='/users' className='text-white text-base font-bold'>Users</a></li>
           <li><Link to="/sign-in" className="font-bold">Sign In</Link></li>
           <li>
             <details className="group">
               <summary className="cursor-pointer">More</summary>
               <ul className="absolute hidden group-hover:block bg-blue-800 p-2">
-                {/* <li><Link to="/register" className="block text-sm px-2 py-1">Register</Link></li> */}
+                <li><Link to="/register" className="block text-sm px-2 py-1">Register</Link></li>
                 <li><Link to="/logout" className="block text-sm px-2 py-1">Log Out</Link></li>
               </ul>
             </details>
@@ -54,8 +55,9 @@ function Nav() {
             <li><Link to="/" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Home</Link></li>
             <li><Link to="/tutorial" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Tutorial</Link></li>
             <li><Link to="/support" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Support</Link></li>
+            <li><Link to="/users" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Users</Link></li>
             <li><Link to="/sign-in" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Sign In</Link></li>
-            {/* <li><Link to="/register" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Register</Link></li> */}
+            <li><Link to="/register" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Register</Link></li>
             <li><Link to="/logout" onClick={() => setIsMenuOpen(false)} className="block p-2 text-base font-bold">Log Out</Link></li>
           </ul>
         )}

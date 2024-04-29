@@ -1,65 +1,35 @@
-import axios from "axios";
+import axios from 'axios';
 
-// BASE URL for the Interface API
-const INTERFACE_ENDPOINT = import.meta.env.VITE_REACT_APP_INTERFACE_ENDPOINT;
-const apiClient = axios.create({
-  baseURL: INTERFACE_ENDPOINT,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-const useInterfaceAPIService = () => {
-  const login = async (username) => {
-    console.log("Attempting login with:", username);
-    try {
-      const response = await apiClient.post("/api/auth/login", { username });
-      const interfaceToken = response.data.token; // More meaningful name for the token
-      sessionStorage.setItem("interfaceToken", interfaceToken);
-      console.log("Interface token received and stored:", interfaceToken);
-    } catch (error) {
-      console.error("Login error:", error);
-      throw new Error("Login failed, please check the credentials and network.");
-    }
-  };
-
-  const validatePayload = (payload) => {
-    const requiredFields = ["batch", "material", "plant", "operation", "miccode", "result"];
-    for (let field of requiredFields) {
-      if (!payload[field] || (field === "result" && typeof payload[field] !== 'number')) {
-        console.error("Validation error: Missing or invalid field", field);
-        return false;
+const authenticateAndGetToken = async () => {
+  try {
+    const response = await axios.post(`${import.meta.env.VITE_REACT_APP_APIGATEWAY_URL}/interface/request-token`, {}, {
+      headers: {
+        "Content-Type": "application/json",
+        "api_key": import.meta.env.API_KEY,
+        "api_secret": import.meta.env.API_SECRET
       }
-    }
-    return true;
-  };
-
-  const sendPayload = async (payload) => {
-    const interfaceToken = sessionStorage.getItem("interfaceToken");
-    if (!interfaceToken) {
-      console.error("No interface token found, initiating login.");
-      throw new Error("Authentication required. Please login.");
-    }
-
-    if (!validatePayload(payload)) {
-      throw new Error("Payload validation failed. Please check the data.");
-    }
-
-    try {
-      const response = await apiClient.post(
-        "/api/quality-data",
-        payload,
-        { headers: { Authorization: `Bearer ${interfaceToken}` } }
-      );
-      console.log("Payload sent successfully:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error sending payload:", error);
-      throw new Error("Error sending data, please try again.");
-    }
-  };
-
-  return { login, sendPayload };
+    });
+    console.log("Authentication successful:", response.data);
+    return response.data.accessToken;  // Return the access token directly
+  } catch (error) {
+    console.error("Authentication failed:", error);
+    throw new Error("Authentication failed");
+  }
 };
 
-export default useInterfaceAPIService;
+const sendInterfaceData = async (data, authToken) => {
+  try {
+    const response = await axios.post(`${import.meta.env.VITE_REACT_APP_APIGATEWAY_URL}/interface/send-inspection-data`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${authToken}`
+      }
+    });
+    return response.data;  // Return the server response
+  } catch (error) {
+    console.error("Failed to send data:", error);
+    throw new Error("Failed to send data");
+  }
+};
+
+export { authenticateAndGetToken, sendInterfaceData };

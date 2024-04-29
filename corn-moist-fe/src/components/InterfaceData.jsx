@@ -1,128 +1,181 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import useInterfaceAPIService from "../services/InterfaceAPIService";
-import debounce from "lodash/debounce";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import { authenticateAndGetToken, sendInterfaceData } from "../services/InterfaceAPIService";
 
-const InterfaceData = ({ interfaceData, statistics }) => {
-  const { login, sendPayload } = useInterfaceAPIService();
-  const [isLoading, setLoading] = useState(false);
+const InterfaceData = ({ interfaceData }) => {
+  const [statisticsHistory, setStatisticsHistory] = useState([]);
+  const [physValues, setPhysValues] = useState({ average: 0, sd: 0, cv: 0 });
   const [logMessage, setLogMessage] = useState("Ready to interface");
+  const [authToken, setAuthToken] = useState("");
 
-  const handleInterfaceClick = async () => {
-    setLoading(true);
-    const username = sessionStorage.getItem("username");
-    if (!username) {
-      setLogMessage("Login failed: No credentials found.");
-      setLoading(false);
-      return;
+  // Load initial data from localStorage on mount
+  useEffect(() => {
+    const loadStatistics = () => {
+      const loadedStats = localStorage.getItem("statisticsCollection");
+      if (loadedStats) {
+        const stats = JSON.parse(loadedStats);
+        setStatisticsHistory(stats);
+        updatePhysValues(stats);
+      }
+    };
+    loadStatistics(); // Call on mount
+  }, []);
+
+  const updatePhysValues = useCallback((stats) => {
+    if (stats.length > 0) {
+      const averages = stats.map(stat => stat.average);
+      const sds = stats.map(stat => stat.sd);
+      const cvs = stats.map(stat => stat.cv);
+      setPhysValues({
+        average: Math.max(...averages),
+        sd: Math.max(...sds),
+        cv: Math.max(...cvs)
+      });
+    } else {
+      setPhysValues({ average: 0, sd: 0, cv: 0 });
+    }
+  }, []);
+
+  // Updating local storage and state simultaneously
+  const modifyStatistics = useCallback((stats) => {
+    localStorage.setItem("statisticsCollection", JSON.stringify(stats));
+    setStatisticsHistory([...stats]);  // Create a new array to ensure re-render
+  }, []);
+
+  const updateStatsFromStorage = () => {
+    const loadedStats = localStorage.getItem("statisticsCollection");
+    if (loadedStats) {
+      const stats = JSON.parse(loadedStats);
+      setStatisticsHistory(stats); // Directly set new fetched data
+      updatePhysValues(stats);
+    }
+  };
+  
+  const removeFromStatistics = useCallback((index) => {
+    const updatedStatistics = statisticsHistory.filter((_, idx) => idx !== index);
+    modifyStatistics(updatedStatistics);
+  }, [statisticsHistory, modifyStatistics]);
+
+  useEffect(() => {
+    console.log("Statistics History Updated:", statisticsHistory);
+  }, [statisticsHistory]);  // Log when statisticsHistory updates
+  
+  useEffect(() => {
+    console.log("Physical Values Updated:", physValues);
+  }, [physValues]);  // Log when physValues updates  
+
+  const forceUpdate = useState()[1].bind(null, {});  // Create a function to force update
+
+  useEffect(() => {
+    window.forceUpdate = forceUpdate;  // Expose forceUpdate for debugging
+  }, []);
+
+  const handleInterface = async () => {
+    if (!authToken) {
+      try {
+        const token = await authenticateAndGetToken();
+        setAuthToken(token);
+        setLogMessage("Authenticated successfully");
+      } catch (error) {
+        setLogMessage(`Authentication failed: ${error.message}`);
+        return;
+      }
     }
 
     try {
-      await login(username);
-      setLogMessage("Logged in successfully. Sending data...");
-      console.log("Interface Data Props:", interfaceData);
-      console.log("Statistics Props:", statistics);
-      console.log("Received statistics in InterfaceData:", statistics);
-      const payload = {
-        ...interfaceData,
-        statistics: {
-          average: statistics.average.toFixed(1),
-          sd: statistics.sd.toFixed(1),
-          cv: statistics.cv.toFixed(1),
-        },
-      };      
-      console.log("Payload being sent:", payload);
-      try {
-        await sendPayload(payload);
-        setLogMessage(`Data interfaced successfully.`);
-      } catch (error) {
-        console.error(`Error sending payload:`, error);
-        setLogMessage(
-          `Error: ${error.response?.data?.message || error.message}`
-        );
-      }
+      const data = {
+        "inspectionData": {
+          "requestRef": interfaceData.inslot && interfaceData.operation,
+          "inspecLot": interfaceData.inslot,
+          "plant": interfaceData.plant,
+          "pointData": [
+            { "operation": interfaceData.operation, "mic": "MOISCORN", "result": physValues.average.toFixed(1)},
+            { "operation": interfaceData.operation, "mic": "SDCORN01", "result": physValues.sd.toFixed(1) },
+            { "operation": interfaceData.operation, "mic": "CVCORN01", "result": physValues.cv.toFixed(1) }
+          ]
+        }
+      };
+      const result = await sendInterfaceData(data, authToken);
+      setLogMessage("Data sent successfully: " + JSON.stringify(result));
     } catch (error) {
-      setLogMessage(`Failed to login or send data: ${error.message}`);
-    } finally {
-      setLoading(false);
+      setLogMessage(error.message);
     }
   };
-
-  const debouncedHandleInterfaceClick = useCallback(
-    debounce(handleInterfaceClick, 300),
-    [handleInterfaceClick]
-  );
-
-  const displayValue = (value) => {
-    // Check if the value is a number and format it if so
-    if (typeof value === "number") {
-      return value.toFixed(1);
-    } else if (typeof value === "object" && value !== null) {
-      // Assuming you might have object values, stringify them
-      return JSON.stringify(value);
-    }
-    return value.toString();
-  };
-  
-
-  // Selected statistics keys
-  const selectedStatsKeys = ["average", "sd", "cv"];
-  const selectedStatsValues = selectedStatsKeys.map((key) => statistics[key]);
 
   return (
-    <div className="flex flex-col items-center mt-2">
-      <div className="overflow-x-auto">
-        <table className="table table-xs">
-          <thead>
-            <tr>
-              {Object.keys(interfaceData)
-                .concat(selectedStatsKeys)
-                .map((key, index) => (
-                  <th
-                    key={index}
-                    className="text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3"
-                  >
-                    {key.charAt(0).toUpperCase() + key.slice(1)}
-                  </th>
-                ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {Object.values(interfaceData)
-                .concat(selectedStatsValues)
-                .map((value, index) => (
-                  <td
-                    key={index}
-                    className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                  >
-                    {displayValue(value)}
+    <div className="grid grid-cols-4 gap-4">
+      <div className="col-span-3 ml-4">
+        <div className="overflow-x-auto">
+          <table className="table table-xs">
+            <thead>
+              <tr>
+                <th>Inspection Lot</th>
+                <th>Operation</th>
+                <th>Batch</th>
+                <th>Material</th>
+                <th>Plant</th>
+                <th>MOISCORN</th>
+                <th>SDCORN01</th>
+                <th>CVCORN01</th>
+                <th># Sample</th>
+                <th>N</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Range</th>
+                <th>Average</th>
+                <th>Median</th>
+                <th>SD</th>
+                <th>Variance</th>
+                <th>Skewness</th>
+                <th>Kurtosis</th>
+                <th>CV</th>
+              </tr>
+            </thead>
+            <tbody className="text-center">
+              <tr>
+                {Object.values(interfaceData).map((value, idx) => <td key={idx}>{value}</td>)}
+                <td>{physValues.average.toFixed(1)}</td>
+                <td>{physValues.sd.toFixed(1)}</td>
+                <td>{physValues.cv.toFixed(1)}</td>
+                <td colSpan={15}></td>
+              </tr>
+              {statisticsHistory.map((stats, index) => (
+                <tr key={index}>
+                  <td colSpan={8}></td>
+                  <td>{index}</td>
+                  <td>{stats.n.toFixed(1)}</td>
+                  <td>{stats.min.toFixed(1)}</td>
+                  <td>{stats.max.toFixed(1)}</td>
+                  <td>{stats.range.toFixed(1)}</td>
+                  <td>{stats.average.toFixed(1)}</td>
+                  <td>{stats.median.toFixed(1)}</td>
+                  <td>{stats.sd.toFixed(1)}</td>
+                  <td>{stats.variance.toFixed(1)}</td>
+                  <td>{stats.skewness.toFixed(1)}</td>
+                  <td>{stats.kurtosis.toFixed(1)}</td>
+                  <td>{stats.cv.toFixed(1)}</td>
+                  <td>
+                    <button className="text-red-500 hover:text-red-700" onClick={() => removeFromStatistics(index)}>
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
                   </td>
-                ))}
-              <div className="flex justify-center m-2">
-                <button
-                  className={`btn ${
-                    isLoading ? "btn-disabled" : "btn-primary"
-                  } rounded-full px-4 py-2`}
-                  onClick={debouncedHandleInterfaceClick}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Processing..." : "Interface"}
-                </button>
-              </div>
-            </tr>
-          </tbody>
-        </table>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <p className="text-sm text-teal-500 mt-2">{logMessage}</p>
+      <div className="flex items-center">
+        <button className="btn btn-primary mr-1" onClick={handleInterface}>Interface</button>
+        <p>{logMessage}</p>
+      </div>
     </div>
   );
 };
 
 InterfaceData.propTypes = {
-  interfaceData: PropTypes.object.isRequired,
-  statistics: PropTypes.object.isRequired,
+  interfaceData: PropTypes.object.isRequired
 };
 
 export default InterfaceData;
